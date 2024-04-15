@@ -12,16 +12,22 @@
 
 	.type _vectors, %object
 _vectors:
-	.long _stack_top
-	.long _start
+	.long _stack_top        @ 0
+	.long _start            @ 1
 
 	.rept 13
 	.long 0
 	.endr
 
-	.long systick_handler
+	.long systick_handler   @ 15
 
-	.rept 32
+	.rept 7
+	.long 0
+	.endr
+
+	.long exti4_15_handler	@ 23
+
+	.rept 24
 	.long 0
 	.endr
 

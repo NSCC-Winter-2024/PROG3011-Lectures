@@ -10,6 +10,15 @@ void print_ch(char ch) {
 #define RCC_PLLCFGR (volatile unsigned long *)0x4002100C
 #define RCC_IOPENR  (volatile unsigned long *)0x40021034
 
+#define EXTI_RTSR1   (volatile unsigned long *)0x40021800
+#define EXTI_FTSR1   (volatile unsigned long *)0x40021804
+#define EXTI_FPR1    (volatile unsigned long *)0x40021810
+#define EXTI_EXTICR1 (volatile unsigned long *)0x40021860
+#define EXTI_EXTICR2 (volatile unsigned long *)0x40021864
+#define EXTI_EXTICR3 (volatile unsigned long *)0x40021868
+#define EXTI_EXTICR4 (volatile unsigned long *)0x4002186C
+#define EXTI_IMR1    (volatile unsigned long *)0x40021880
+
 #define FLASH_ACR   (volatile unsigned long *)0x40022000
 
 #define GPIOA_MODER (volatile unsigned long *)0x50000000
@@ -24,10 +33,24 @@ void print_ch(char ch) {
 #define SYST_CVR    (volatile unsigned long *)0xE000E018
 #define SYST_CALIB  (volatile unsigned long *)0xE000E01C
 
+#define NVIC_ISER   (volatile unsigned long *)0xE000E100
+
 // SysTick Interrupt Service Routine (ISR)
 volatile int count = 0;
 void systick_handler() {
     count++;
+}
+
+// EXTI Interrupt Service Routine (ISR)
+void exti4_15_handler() {
+    // check for button press
+    if (!(*GPIOC_IDR & 0x2000UL)) {
+        // turn LED ON/OFF
+        *GPIOA_ODR ^= 0x00000020UL;
+    }
+
+    // clear the pending interrupt
+    *EXTI_FPR1 = 0x00002000UL;
 }
 
 int main() {
@@ -86,6 +109,20 @@ int main() {
     // set PC13 as a digital input (User Button)
     *GPIOC_MODER &= ~0x0C000000UL;
 
+    // configure PC13 as an interrupt
+
+    // select PC13 to generate EXTI13 line
+    *EXTI_EXTICR4 |= 0x00000200UL;
+
+    // select EXTI13 as a falling edge trigger
+    *EXTI_FTSR1 |= 0x00002000UL;
+
+    // unmask the EXTI event for EXTI13
+    *EXTI_IMR1 |= 0x00002000UL;
+
+    // unmask the NVIC interrupt (EXTI4-15, position 7)
+    *NVIC_ISER |= 0x00000080UL;
+
     while (1) {
 
         // check for button press
@@ -104,7 +141,7 @@ int main() {
 //            count++;
 //        }
         if (count > 1000) {
-            *GPIOA_ODR ^= 0x00000020UL;
+            //*GPIOA_ODR ^= 0x00000020UL;
             count = 0;
         }
     }
