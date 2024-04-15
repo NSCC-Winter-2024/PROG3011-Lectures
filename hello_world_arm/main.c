@@ -24,6 +24,12 @@ void print_ch(char ch) {
 #define SYST_CVR    (volatile unsigned long *)0xE000E018
 #define SYST_CALIB  (volatile unsigned long *)0xE000E01C
 
+// SysTick Interrupt Service Routine (ISR)
+volatile int count = 0;
+void systick_handler() {
+    count++;
+}
+
 int main() {
 
 #ifdef NDEBUG
@@ -65,7 +71,7 @@ int main() {
     // SysTick configuration
     *SYST_RVR = 64000UL;        // set count to 64,000
     *SYST_CVR = 0UL;            // clear the current value and count flag
-    *SYST_CSR |= 0x00000005UL;  // enable timer and use processor clock
+    *SYST_CSR |= 0x00000007UL;  // enable timer, use processor clock and enable interrupt
 
     // configuration
     *RCC_IOPENR |= 0x00000005UL; // enable GPIOA and GPIOC clock
@@ -80,7 +86,6 @@ int main() {
     // set PC13 as a digital input (User Button)
     *GPIOC_MODER &= ~0x0C000000UL;
 
-    int count = 0;
     while (1) {
 
         // check for button press
@@ -95,9 +100,9 @@ int main() {
         print_ch('*');
 
         // check for SysTick timer to expire
-        if (*SYST_CSR & 0x00010000UL) {
-            count++;
-        }
+//        if (*SYST_CSR & 0x00010000UL) {
+//            count++;
+//        }
         if (count > 1000) {
             *GPIOA_ODR ^= 0x00000020UL;
             count = 0;

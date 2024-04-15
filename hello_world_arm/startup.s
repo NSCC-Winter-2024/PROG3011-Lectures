@@ -15,7 +15,13 @@ _vectors:
 	.long _stack_top
 	.long _start
 
-	.rept 46
+	.rept 13
+	.long 0
+	.endr
+
+	.long systick_handler
+
+	.rept 32
 	.long 0
 	.endr
 
